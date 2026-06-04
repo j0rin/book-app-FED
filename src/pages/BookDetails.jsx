@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Link, useParams } from 'react-router';
-import SmallBook from '../components/SmallBook';
+import BookCover from '../components/BookCover';
 
 export default function BookDetails() {
   // useParams haalt de dynamische route parameter uit de url
@@ -37,19 +37,36 @@ export default function BookDetails() {
         setRating(ratingData);
       }
 
-      // eerste subject gebruiken als basis voor recommendations
-      // --------------------------------------------------------------------------------------------------------- verbeteren
-      const firstSubject = data.subjects?.[0];
+      // betere subject selectie voor recommendations
+      const validSubjects = (data.subjects || []).filter((subject) => {
+        const lower = subject.toLowerCase();
 
-      if (firstSubject) {
+        return (
+          subject.length < 30 &&
+          !lower.startsWith('series:') &&
+          !lower.includes('reading level') &&
+          !lower.includes('open library') &&
+          !lower.includes('internet archive')
+        );
+      });
+
+      const randomSubject = validSubjects[Math.floor(Math.random() * validSubjects.length)];
+
+      if (randomSubject) {
         const similarResponse = await fetch(
-          `https://openlibrary.org/search.json?subject=${encodeURIComponent(firstSubject)}&limit=12`
+          `https://openlibrary.org/search.json?subject=${encodeURIComponent(randomSubject)}&limit=20`
         );
 
         const similarData = await similarResponse.json();
 
-        // huidige boek uit resultaten filteren zodat deze niet dubbel getoond wordt
-        setSimilarBooks((similarData.docs || []).filter((item) => item.key !== `/works/${id}`));
+        // ongewenste resultaten eruit filteren
+        setSimilarBooks(
+          (similarData.docs || [])
+            .filter((item) => item.key !== `/works/${id}`)
+            .filter((item) => item.cover_i)
+            .filter((item) => item.title)
+            .sort((a, b) => (b.edition_count || 0) - (a.edition_count || 0))
+        );
       } else {
         // fallback als boek geen subjects heeft
         setSimilarBooks([]);
@@ -87,7 +104,7 @@ export default function BookDetails() {
           Close book
         </Link>
 
-        <SmallBook
+        <BookCover
           cover={`https://covers.openlibrary.org/b/id/${book.covers?.[0]}-L.jpg`}
           title={book.title}
           className="mt-8 max-w-xs"
@@ -142,7 +159,7 @@ export default function BookDetails() {
           <div className="bookcase">
             {similarBooks.map((similar) => (
               <Link key={similar.key} to={`/book/${similar.key.split('/').pop()}`}>
-                <SmallBook
+                <BookCover
                   cover={`https://covers.openlibrary.org/b/id/${similar.cover_i}-L.jpg`}
                   title={similar.title}
                 />

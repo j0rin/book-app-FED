@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import SmallBook from '../components/SmallBook';
+import BookCover from '../components/BookCover';
 import { searchBooks } from '../services/openLibrary';
 
 const SUBJECTS = [
@@ -24,7 +24,7 @@ const SUBJECTS = [
   'Space',
   'Dragons',
   'Friendship',
-]; // ---------------------------------------------------------------------------------------------- check api
+];
 
 export default function Home() {
   // hook om query params uit de url te lezen en aan te passen
@@ -125,7 +125,7 @@ export default function Home() {
 
               return (
                 <Link to={`/book/${book.key.split('/').pop()}`} key={book.key}>
-                  <SmallBook cover={`https://covers.openlibrary.org/b/id/${info.cover_i}-M.jpg`} title={info.title} />
+                  <BookCover cover={`https://covers.openlibrary.org/b/id/${info.cover_i}-M.jpg`} title={info.title} />
                 </Link>
               );
             })}
