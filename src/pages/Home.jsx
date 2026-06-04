@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
-import SmallBook from '../components/SmallBook';
+import { Link } from 'react-router';
+import BookCover from '../components/BookCover';
 import { searchBooks } from '../services/openLibrary';
 
 const SUBJECTS = [
@@ -24,17 +24,15 @@ const SUBJECTS = [
   'Space',
   'Dragons',
   'Friendship',
-]; // ---------------------------------------------------------------------------------------------- check api
+];
 
 export default function Home() {
-  // hook om query params uit de url te lezen en aan te passen
-  // hierdoor blijft de zoekopdracht bewaard in de url
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // state voor inputveld, resultaten en loading state
-  const [query, setQuery] = useState(searchParams.get('q') || '');
+  // states voor zoekterm, resultaten, loading, foutmeldingen en zoekstatus
+  const [query, setQuery] = useState('');
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // kiest eenmalig 10 random subjects bij het laden van de pagina
   // useMemo zorgt ervoor dat deze niet bij elke render opnieuw shufflet
@@ -51,43 +49,34 @@ export default function Home() {
       // als input leeg is resultaten resetten
       if (!trimmedQuery) {
         setBooks([]);
-        setSearchParams({});
+        setError(null);
+        setHasSearched(false);
         return;
       }
 
-      // zoekterm synchroniseren met de url
-      // handig voor refresh, browser history en deelbare links
-      setSearchParams({ q: trimmedQuery });
-
       setLoading(true);
+      setError(null);
 
       try {
-        // api call naar open library service
+        // boeken ophalen
         const results = await searchBooks(trimmedQuery);
 
-        // resultaten opslaan in state zodat component opnieuw rendert
         setBooks(results);
+        setHasSearched(true);
       } catch (error) {
         console.error(error);
+
+        setBooks([]);
+        setError('Books could not be loaded');
+        setHasSearched(true);
       } finally {
-        // loading state altijd resetten
         setLoading(false);
       }
     }, 400);
 
     // cleanup function voorkomt dat oude timeouts blijven lopen
     return () => clearTimeout(timeout);
-  }, [query, setSearchParams]);
-
-  // useEffect draait bij eerste load
-  // leest query uit url
-  useEffect(() => {
-    const urlQuery = searchParams.get('q');
-
-    if (!urlQuery) return;
-
-    setQuery(urlQuery);
-  }, []);
+  }, [query]);
 
   return (
     <>
@@ -118,19 +107,22 @@ export default function Home() {
       <div className="main">
         {loading ? (
           <p>Loading...</p>
-        ) : (
+        ) : error ? (
+          <p>{error}</p>
+        ) : books.length > 0 ? (
           <div className="bookcase">
-            {books.map((book) => {
-              const info = book;
-
-              return (
-                <Link to={`/book/${book.key.split('/').pop()}`} key={book.key}>
-                  <SmallBook cover={`https://covers.openlibrary.org/b/id/${info.cover_i}-M.jpg`} title={info.title} />
-                </Link>
-              );
-            })}
+            {books.map((book) => (
+              <Link to={`/book/${book.key.split('/').pop()}`} key={book.key}>
+                <BookCover
+                  cover={book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` : null}
+                  title={book.title}
+                />
+              </Link>
+            ))}
           </div>
-        )}
+        ) : hasSearched ? (
+          <p>No books found</p>
+        ) : null}
       </div>
     </>
   );
