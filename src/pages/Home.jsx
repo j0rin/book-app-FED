@@ -33,11 +33,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const showSubjects = !loading && !error && books.length === 0 && !hasSearched;
 
   // kiest eenmalig 10 random subjects bij het laden van de pagina
   // useMemo zorgt ervoor dat deze niet bij elke render opnieuw shufflet
   const randomSubjects = useMemo(() => {
-    return [...SUBJECTS].sort(() => Math.random() - 0.5).slice(0, 10);
+    return [...SUBJECTS].sort(() => Math.random() - 0.5).slice(0, 12);
   }, []);
 
   // wacht 400ms na typen voordat api call wordt gedaan
@@ -79,51 +80,61 @@ export default function Home() {
   }, [query]);
 
   return (
-    <>
-      <div className="header">
-        <h1 className="text-4xl text-balance">What would you like to read?</h1>
+    <div className="flex w-full max-w-140 flex-col items-center gap-12">
+      <h1 className="max-w-[14ch] text-center text-5xl">What would you like to read?</h1>
 
+      <div className="corner-smooth flex h-100 w-full flex-col overflow-clip rounded-[calc(var(--radius-4xl)+1px)] border border-taupe-300 bg-white shadow-2xl shadow-taupe-950/10 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-orange-500">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search books, authors, genres..."
-          className="mt-8 w-full rounded-md bg-taupe-200 px-6 py-4"
+          placeholder="Search books, authors..."
+          className="border-b border-taupe-100 px-6 py-4 text-xl font-light text-inherit placeholder-taupe-400 focus:outline-none"
         />
 
-        <p className="mt-2 text-sm leading-6">
-          Type in a book, series, or topic you enjoyed to discover what to read next.
-        </p>
+        <div className="scrollbar-hide flex grow items-center justify-center overflow-y-auto">
+          {showSubjects && (
+            <div className="flex flex-wrap justify-center gap-2 p-12">
+              {randomSubjects.map((subject) => (
+                <button key={subject} onClick={() => setQuery(subject)} className="tag cursor-pointer">
+                  {subject}
+                </button>
+              ))}
+            </div>
+          )}
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {randomSubjects.map((subject) => (
-            <button key={subject} onClick={() => setQuery(subject)} className="tag cursor-pointer">
-              {subject}
-            </button>
-          ))}
+          {loading ? (
+            <p>Loading...</p>
+          ) : error ? (
+            <p>{error}</p>
+          ) : books.length > 0 ? (
+            <div className="flex w-full flex-col gap-2 self-start p-4">
+              {books.map((book) => (
+                <Link
+                  to={`/book/${book.key.split('/').pop()}`}
+                  key={book.key}
+                  className="corner-smooth flex items-center gap-4 rounded-2xl p-2 hover:bg-taupe-100 focus:bg-taupe-100 focus:outline-none"
+                >
+                  <BookCover
+                    cover={book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` : null}
+                    title={book.title}
+                    className="corner-smooth w-12 shrink-0 rounded-md"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate">{book.title}</p>
+
+                    <p className="mt-1 truncate text-sm text-taupe-400">
+                      {book.author_name?.join(', ') || 'Unknown Author'}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : hasSearched ? (
+            <p>No books found</p>
+          ) : null}
         </div>
       </div>
-
-      <div className="main">
-        {loading ? (
-          <p>Loading...</p>
-        ) : error ? (
-          <p>{error}</p>
-        ) : books.length > 0 ? (
-          <div className="bookcase">
-            {books.map((book) => (
-              <Link to={`/book/${book.key.split('/').pop()}`} key={book.key}>
-                <BookCover
-                  cover={book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` : null}
-                  title={book.title}
-                />
-              </Link>
-            ))}
-          </div>
-        ) : hasSearched ? (
-          <p>No books found</p>
-        ) : null}
-      </div>
-    </>
+    </div>
   );
 }
