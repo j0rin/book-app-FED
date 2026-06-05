@@ -7,27 +7,42 @@
 }
 
 @layer base {
+  body {
+    @apply bg-linear-to-b from-taupe-50 to-orange-100 bg-fixed text-taupe-700;
+  }
+
   h1,
   h2,
   h3 {
     @apply font-serif font-medium;
   }
+
+  :focus-visible {
+    @apply rounded-[1px] outline-2 outline-offset-2 outline-orange-500;
+  }
 }
 
 @layer components {
-  .header {
-    @apply shrink-0 bg-taupe-100 p-6 md:p-12 lg:sticky lg:top-0 lg:h-dvh lg:w-[30%] lg:max-w-xl lg:overflow-auto 2xl:p-20;
-  }
-
-  .main {
-    @apply grow p-6 md:p-12 2xl:p-20;
-  }
-
   .bookcase {
     @apply grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 2xl:gap-8;
   }
 
   .tag {
-    @apply rounded-full bg-taupe-200 px-3 py-1 text-sm text-taupe-600;
+    @apply rounded-full bg-taupe-100 px-3 py-1 text-sm text-taupe-600;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .corner-smooth {
+    corner-shape: superellipse(1.5);
   }
 }

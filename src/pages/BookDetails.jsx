@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Link, useParams } from 'react-router';
 import BookCover from '../components/BookCover';
+import BookRating from '../components/BookRating';
 
 // subjects filteren zodat alleen bruikbare categorieen overblijven
 function filterValidSubjects(subjects = []) {
@@ -66,7 +67,7 @@ async function fetchSimilarBooks(id, subjects) {
     .filter((item) => item.cover_i)
     .filter((item) => item.title)
     .sort((a, b) => (b.edition_count || 0) - (a.edition_count || 0))
-    .slice(0, 20);
+    .slice(0, 10);
 }
 
 export default function BookDetails() {
@@ -148,12 +149,16 @@ export default function BookDetails() {
   const visibleSubjects = filterValidSubjects(book?.subjects || []).slice(0, 5);
 
   return (
-    <>
-      <div className="header">
-        <Link to="/" className="mb-8 inline-block rounded-full bg-taupe-700 px-4 py-2 text-sm text-taupe-50">
-          Close book
-        </Link>
+    <div className="corner-smooth min-h-100 w-full max-w-140 overflow-clip rounded-[calc(var(--radius-4xl)+1px)] border border-taupe-300 bg-white shadow-2xl shadow-taupe-950/10">
+      <div className="sticky top-0 border-b border-taupe-100 bg-white px-6 pb-6">
+        <Link to="/" className="inline-flex flex-col">
+          <span className="bg-taupe-700 p-4 text-sm text-taupe-50">Close book</span>
 
+          <span className="h-3 bg-taupe-700 [clip-path:polygon(0_0,100%_0%,100%_100%,50%_0,0_100%)]"></span>
+        </Link>
+      </div>
+
+      <div className="flex flex-col gap-6 border-b border-taupe-100 p-6">
         {loadingBook ? (
           <p>Loading book...</p>
         ) : error ? (
@@ -163,65 +168,64 @@ export default function BookDetails() {
             <BookCover
               cover={book.covers?.[0] ? `https://covers.openlibrary.org/b/id/${book.covers[0]}-L.jpg` : null}
               title={book.title}
-              className="mt-8 max-w-xs"
+              className="corner-smooth max-w-60 rounded-xl"
             />
 
-            <div className="mt-8">
-              <h1 className="text-4xl">{book.title}</h1>
+            <h1 className="text-4xl text-balance">{book.title}</h1>
 
-              {rating?.summary?.count > 0 && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-md bg-taupe-50 px-2">
-                  <span className="text-lg text-amber-500">
-                    {'★'.repeat(Math.round(rating.summary.average))}
-                    {'☆'.repeat(5 - Math.round(rating.summary.average))}
-                  </span>
+            <BookRating rating={rating} />
 
-                  <span className="text-sm font-bold text-taupe-600">{rating.summary.average.toFixed(1)}</span>
+            <div className="flex flex-col gap-2 text-sm leading-6">
+              <ReactMarkdown>{displayedDescription}</ReactMarkdown>
 
-                  <span className="text-sm text-taupe-600">{rating.summary.count} reviews</span>
-                </div>
+              {words.length > 50 && (
+                <button
+                  onClick={() => setShowFullDescription((prev) => !prev)}
+                  className="w-fit cursor-pointer text-taupe-500"
+                >
+                  {showFullDescription ? 'Show less' : 'Read more'}
+                </button>
               )}
+            </div>
 
-              <div className="mt-6 flex flex-col gap-2 text-sm leading-6">
-                <ReactMarkdown>{displayedDescription}</ReactMarkdown>
-
-                {words.length > 50 && (
-                  <button
-                    onClick={() => setShowFullDescription((prev) => !prev)}
-                    className="w-fit cursor-pointer text-taupe-500"
-                  >
-                    {showFullDescription ? 'Show less' : 'Read more'}
-                  </button>
-                )}
-              </div>
-
-              <div className="mt-6 flex flex-wrap gap-2">
-                {visibleSubjects.map((subject) => (
-                  <Link key={subject} to={`/?q=${encodeURIComponent(subject)}`} className="tag capitalize">
-                    {subject}
-                  </Link>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {visibleSubjects.map((subject) => (
+                <Link key={subject} to={`/?q=${encodeURIComponent(subject)}`} className="tag capitalize">
+                  {subject}
+                </Link>
+              ))}
             </div>
           </>
         )}
       </div>
 
-      <div className="main">
-        <h2 className="mb-8 text-3xl">Similar Books</h2>
+      <div className="flex flex-col gap-6 p-6">
+        <h2 className="text-3xl">Similar Books</h2>
 
         {error ? (
           <p>No books found</p>
         ) : loadingSimilarBooks ? (
-          <p>Loading...</p>
+          <p>Loading more books...</p>
         ) : similarBooks.length > 0 ? (
-          <div className="bookcase">
+          <div className="-m-2 flex flex-col gap-2">
             {similarBooks.map((similar) => (
-              <Link key={similar.key} to={`/book/${similar.key.split('/').pop()}`}>
+              <Link
+                key={similar.key}
+                to={`/book/${similar.key.split('/').pop()}`}
+                className="corner-smooth flex items-center gap-4 rounded-2xl p-2 hover:bg-taupe-100 focus:bg-taupe-100 focus:outline-none"
+              >
                 <BookCover
-                  cover={`https://covers.openlibrary.org/b/id/${similar.cover_i}-L.jpg`}
+                  cover={similar.cover_i ? `https://covers.openlibrary.org/b/id/${similar.cover_i}-M.jpg` : null}
                   title={similar.title}
+                  className="corner-smooth w-12 shrink-0 rounded-md"
                 />
+                <div className="min-w-0">
+                  <p className="truncate">{book.title}</p>
+
+                  <p className="mt-1 truncate text-sm text-taupe-400">
+                    {similar.author_name?.join(', ') || 'Unknown Author'}
+                  </p>
+                </div>
               </Link>
             ))}
           </div>
@@ -229,6 +233,6 @@ export default function BookDetails() {
           <p>No books found</p>
         )}
       </div>
-    </>
+    </div>
   );
 }

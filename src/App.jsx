@@ -5,7 +5,7 @@ import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
-    <div className="lg:flex lg:min-h-dvh">
+    <div className="flex min-h-dvh items-center justify-center p-4">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/book/:id" element={<BookDetails />} />
